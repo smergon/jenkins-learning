@@ -4,8 +4,7 @@ pipeline {
 	stages {
 		stage('Checkout') {
 			steps {
-				echo "Checked out branch: 
-${env.BRANCH_NAME}"
+				echo "Checked out branch: ${env.BRANCH_NAME}"
 			}
 		}
 		stage('Build') {
