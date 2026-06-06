@@ -1,40 +1,44 @@
 pipeline {
 	agent any
 
-	triggers {
-        pollSCM('H/10 * * * *')
+	environment {
+        IMAGE_NAME = "jenkins-learning-app"
+        IMAGE_TAG  = "build-${env.BUILD_NUMBER}"
     }
 
 	stages {
 		stage('Checkout') {
 			steps {
-				echo "Checked out branch: ${env.BRANCH_NAME}"
+				echo "Building branch: ${env.BRANCH_NAME}, build #${env.BUILD_NUMBER}"
 			}
 		}
-		stage('Build') {
-			steps {
-				sh 'echo "Building.."'
-				sh './app.sh'
-			}
-		}
-		stage('Test') {
-			steps {
-				sh 'echo "Running tests..."'
-			}
-		}
-		stage('Docker Check') {
-			steps {
-				sh 'docker --version'
-			}
-		}
+		stage('Build Docker image') {
+            steps {
+                sh "docker build -f Dockerfile.app -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
+            }
+        }
+		stage('Run container') {
+            steps {
+                sh "docker run --rm ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+		stage('Verify image exists') {
+            steps {
+                sh "docker images ${IMAGE_NAME}"
+            }
+        }
 	}
 
 	post {
 		success {
-			echo 'Pipeline completed'
-		}
-		failure {
-			echo 'Pipeline failed'
-		}
+            echo "Image ${IMAGE_NAME}:${IMAGE_TAG} built successfully"
+        }
+        failure {
+            echo "Build failed — check console output above"
+        }
+        always {
+            echo "Build #${env.BUILD_NUMBER} complete"
+        }
 	}
 }
